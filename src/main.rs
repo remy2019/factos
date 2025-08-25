@@ -2,6 +2,8 @@ pub mod get_seed;
 pub mod prng_cwg64;
 pub mod shuffle;
 
+use chrono::TimeZone;
+use chrono_tz::Asia::Seoul;
 use clap::{App, Arg};
 
 fn main() {
@@ -14,7 +16,7 @@ fn main() {
                 .value_name("time")
                 .short("t")
                 .long("time")
-                .help("Input datetime as YYYY-MM-DD-HH-MM")
+                .help("Input datetime in KST as YYYY-MM-DD-HH-MM")
                 .required(true),
         )
         .arg(
@@ -49,6 +51,23 @@ fn main() {
         .parse::<u32>()
         .unwrap();
     let mut seq: Vec<u32> = (0..length).map(|x| x + start).collect();
+
+    let time = matches
+        .value_of("time")
+        .unwrap()
+        .split("-")
+        .map(|t| t.parse::<u32>().unwrap())
+        .collect::<Vec<u32>>();
+    if time.len() != 5 {
+        panic!();
+    }
+    let t = Seoul
+        .with_ymd_and_hms(time[0] as i32, time[1], time[2], time[3], time[4], 0)
+        .single()
+        .unwrap()
+        .to_utc()
+        .timestamp_millis();
+    println!("{:?}", t);
 
     let mut seed = get_seed::get_seed();
     shuffle::shuffle(&mut seed, length, &mut seq);
