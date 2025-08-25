@@ -1,7 +1,18 @@
+use regex::Regex;
 use std::str::FromStr;
 
-pub fn get_seed() -> u64 {
-    let raw_seed = "FFFF105DF836A0532C3C7A15D6C07BC6A6D2869A8BBC770B099E056BD468179407E5B1551F5653F98E51CCFB07326C7245EF5D8BFE7D8B686DB662A7D481DEDF";
+pub fn get_seed(tmili: i64) -> u64 {
+    let url = format!("https://beacon.nist.gov/beacon/2.0/pulse/time/{}", tmili);
+    let body: String = ureq::get(url)
+        .call()
+        .unwrap()
+        .body_mut()
+        .read_to_string()
+        .unwrap();
+
+    let regex = Regex::new(r#"hour\D+:\D+"(?<seed>\w*)"#).unwrap();
+    let res = regex.captures(&body).unwrap();
+    let raw_seed = &res["seed"];
     let raw_seed_trim = String::from_str(&raw_seed[0..16]).unwrap();
     u64::from_str_radix(&raw_seed_trim, 16).unwrap()
 }
