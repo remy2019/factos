@@ -5,8 +5,9 @@ pub mod shuffle;
 use chrono::TimeZone;
 use chrono_tz::Asia::Seoul;
 use clap::{App, Arg};
+use regex::Regex;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("factos")
         .version("0.1.0")
         .author("remy2019 <remy2019@gmail.com>")
@@ -73,4 +74,16 @@ fn main() {
     shuffle::shuffle(&mut seed, length, &mut seq);
 
     println!("{:?}", seq);
+
+    // Test getter
+    let url = format!("https://beacon.nist.gov/beacon/2.0/pulse/time/{}", t);
+    let body: String = ureq::get(url).call()?.body_mut().read_to_string()?;
+
+    let regex = Regex::new(r#"hour\D+:\D+"(?<seed>\w*)"#).unwrap();
+    match regex.captures(body.as_str()) {
+        Some(res) => println!("{:?}", &res["seed"]),
+        None => println!("Wrong datetime"),
+    };
+
+    Ok(())
 }
